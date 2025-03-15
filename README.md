@@ -1,19 +1,19 @@
-# LunarixOS
+# WebOS
 
-LunarixOS is a lightweight, open-source operating system designed for simplicity and usability. Built entirely using **HTML, CSS, and JavaScript**, it’s a single-file solution that’s incredibly efficient and easy to use. This project is currently in its early stages, and we’re excited to share it with the community for feedback and collaboration.
+WebOS is a lightweight, open-source operating system designed for simplicity and usability. Built entirely using **HTML, CSS, and JavaScript**, it’s a single-file solution that’s incredibly efficient and easy to use. This project is currently in its early stages, and we’re excited to share it with the community for feedback and collaboration.
 
 ---
 
 ## 🚀 How to Download and Use
 
-1. **Download the latest release** from the [Releases page](https://github.com/swagging-post/LunarixOS/releases).
+1. **Download the latest release** from the [Releases page](https://github.com/SuperHackz/WebOS/releases).
 2. **Open the file** in your browser to start LunarixOS.
 
 ---
 
 ## 🛠️ Features
 
-LunarixOS currently includes the following components:
+WebOS currently includes the following components:
 
 - **Terminal**: A fully functional terminal for system operations.
 - **Settings**: Manage system preferences and configurations.
@@ -24,7 +24,7 @@ LunarixOS currently includes the following components:
 
 ---
 
-## 💡 Why LunarixOS?
+## 💡 Why WebOS?
 
 - **Lightweight**: Built with just HTML, CSS, and JavaScript, LunarixOS is designed to be minimal and efficient.
 - **Single-File Solution**: Everything is packed into one file, making it easy to download, use, and share.
@@ -32,9 +32,9 @@ LunarixOS currently includes the following components:
 
 ---
 
-## ❓ Is LunarixOS Complete?
+## ❓ Is WebOS Complete?
 
-No, LunarixOS is still in its **early stages of development**. We’ve released it early to allow the community to test, provide feedback, and contribute. The project will evolve over time, with more features and improvements being added in future updates.
+No, WebOS is still in its **early stages of development**. We’ve released it early to allow the community to test, provide feedback, and contribute. The project will evolve over time, with more features and improvements being added in future updates.
 
 ---
 
@@ -42,15 +42,9 @@ No, LunarixOS is still in its **early stages of development**. We’ve released 
 
 We welcome contributions from the community! Here’s how you can help:
 
-1. **Report Issues**: If you find a bug or have a feature request, please [open an issue](https://github.com/swagging-post/LunarixOS/issues).
+1. **Report Issues**: If you find a bug or have a feature request, please [open an issue](https://github.com/SuperHackz/WebOS/issues).
 2. **Submit Pull Requests**: Feel free to fork the repository, make improvements, and submit a pull request.
 3. **Spread the Word**: Star this repository and share it with others who might be interested!
-
----
-
-## 📜 License
-
-LunarixOS is released under the [MIT License](https://opensource.org/licenses/MIT). See the [LICENSE](LICENSE) file for more details.
 
 ---
 
