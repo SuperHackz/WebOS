@@ -1,10 +1,6 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-	    <link rel="icon" href="https://raw.githubusercontent.com/SuperHackz/WebOS/refs/heads/main/favicon.ico" type="image/x-icon"/>
-
     <title>WebOS</title>
     <style>
         body {
@@ -292,6 +288,10 @@
          class="app-icon" 
          alt="Settings" 
          onclick="launchApp('System Settings')">
+    <img src="https://cdn-icons-png.flaticon.com/512/3075/3075908.png" 
+         class="app-icon" 
+         alt="Notepad" 
+         onclick="launchApp('Notepad')">
 </div>
 
     <div class="custom-alert" id="customAlert">
@@ -343,10 +343,101 @@ function launchApp(appName) {
     createWindow(appName);
 }
 
+function createBrowserWindow() {
+    const browserWindow = document.createElement('div');
+    browserWindow.className = 'window browser-window';
+    browserWindow.innerHTML = `
+        <div class="title-bar">
+            <span>Web Browser</span>
+            <div class="close-btn" onclick="this.parentElement.parentElement.remove()"></div>
+        </div>
+        <div class="address-bar">
+            <input type="text" class="address-input" placeholder="Enter URL" id="urlInput">
+            <button class="go-button" onclick="loadURL()">Go</button>
+        </div>
+        <iframe class="browser-iframe" id="browserFrame" src="about:blank"></iframe>
+    `;
+    
+    browserWindow.style.left = `${window.innerWidth/2 - 400}px`;
+    browserWindow.style.top = `${window.innerHeight/2 - 300}px`;
+    
+    browserWindow.querySelector('.title-bar').addEventListener('mousedown', startDrag);
+    document.body.appendChild(browserWindow);
+    return browserWindow;
+}
+
+function loadURL() {
+    const input = document.getElementById('urlInput');
+    const frame = document.getElementById('browserFrame');
+    let url = input.value.trim();
+    if (!url) return;
+    if (!url.match(/^https?:\/\//i)) {
+        url = 'https://' + url;
+    }
+    frame.src = url;
+    input.value = url;
+}
+
+function createFileManagerWindow() {
+    const fileWindow = document.createElement('div');
+    fileWindow.className = 'window';
+    fileWindow.style.width = '600px';
+    fileWindow.style.height = '400px';
+    fileWindow.innerHTML = `
+        <div class="title-bar">
+            <span>File Manager</span>
+            <div class="close-btn" onclick="this.parentElement.parentElement.remove()"></div>
+        </div>
+        <div style="padding:20px;height:calc(100% - 60px);overflow:auto">
+            <div class="file-list" id="fileList">
+                <div class="file-item" onclick="alert('Documents folder')">📁 Documents</div>
+                <div class="file-item" onclick="alert('Downloads folder')">📁 Downloads</div>
+                <div class="file-item" onclick="alert('Pictures folder')">📁 Pictures</div>
+                <div class="file-item" onclick="alert('Music folder')">📁 Music</div>
+                <div class="file-item" onclick="alert('Videos folder')">📁 Videos</div>
+            </div>
+        </div>
+    `;
+    
+    fileWindow.style.left = `${window.innerWidth/2 - 300}px`;
+    fileWindow.style.top = `${window.innerHeight/2 - 200}px`;
+    
+    fileWindow.querySelector('.title-bar').addEventListener('mousedown', startDrag);
+    document.body.appendChild(fileWindow);
+    return fileWindow;
+}
+
+function createNotepadWindow() {
+    const notepadWindow = document.createElement('div');
+    notepadWindow.className = 'window';
+    notepadWindow.style.width = '600px';
+    notepadWindow.style.height = '400px';
+    notepadWindow.innerHTML = `
+        <div class="title-bar">
+            <span>Notepad</span>
+            <div class="close-btn" onclick="this.parentElement.parentElement.remove()"></div>
+        </div>
+        <div style="display: flex; padding: 5px; background: rgba(0,0,0,0.2);">
+            <input type="text" id="filename" placeholder="filename.txt" style="margin-right: 5px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 5px;">
+            <button onclick="saveNotepadContent(this)" style="background: rgba(255,255,255,0.1); border: none; color: white; padding: 5px 10px; cursor: pointer;">Save</button>
+        </div>
+        <textarea class="notepad-content" style="width: 100%; height: calc(100% - 80px); background: transparent; color: white; border: none; padding: 10px; resize: none; outline: none;"></textarea>
+    `;
+    
+    notepadWindow.style.left = `${window.innerWidth/2 - 300}px`;
+    notepadWindow.style.top = `${window.innerHeight/2 - 200}px`;
+    
+    notepadWindow.querySelector('.title-bar').addEventListener('mousedown', startDrag);
+    document.body.appendChild(notepadWindow);
+    return notepadWindow;
+}
+
 function createWindow(title) {
-	if(title === 'System Settings') return createSettingsWindow();
+    if(title === 'System Settings') return createSettingsWindow();
     if(title === 'Terminal') return createTerminalWindow();
-    if(title === 'Web Browser N/A') return createBrowserWindow();
+    if(title === 'Web Browser') return createBrowserWindow();
+    if(title === 'File Manager') return createFileManagerWindow();
+    if(title === 'Notepad') return createNotepadWindow();
 
     const newWindow = document.createElement('div');
     newWindow.className = 'window';
@@ -423,6 +514,19 @@ function createTerminalWindow() {
     return termWindow;
 }
 
+function saveNotepadContent(button) {
+    const textarea = button.closest('.window').querySelector('.notepad-content');
+    const filename = button.closest('.window').querySelector('#filename').value || 'note.txt';
+    const content = textarea.value;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
 function processCommand(command) {
     const args = command.split(' ');
     const cmd = args[0].toLowerCase();
@@ -434,6 +538,11 @@ help      - Show this help message
 color     - Change text color (hex or name)
 clear     - Clear the terminal
 echo      - Display a message
+date      - Show current date and time
+ls        - List directory contents
+pwd       - Print working directory
+whoami    - Display current user
+calc      - Simple calculator (calc 2 + 2)
 Example: > color #ff0000 or > color red`;
             
         case 'color':
@@ -451,6 +560,35 @@ Example: > color #ff0000 or > color red`;
             
         case 'echo':
             return args.slice(1).join(' ') || 'Usage: echo [message]';
+            
+        case 'date':
+            return new Date().toString();
+            
+        case 'ls':
+            return `Documents/
+Downloads/
+Pictures/
+Music/
+Videos/`;
+            
+        case 'pwd':
+            return '/home/user';
+            
+        case 'whoami':
+            return 'user';
+            
+        case 'calc':
+            if (args.length !== 4) return 'Usage: calc [number] [operator] [number]';
+            const [_, n1, op, n2] = args;
+            const num1 = parseFloat(n1), num2 = parseFloat(n2);
+            if (isNaN(num1) || isNaN(num2)) return 'Invalid numbers';
+            switch(op) {
+                case '+': return num1 + num2;
+                case '-': return num1 - num2;
+                case '*': return num1 * num2;
+                case '/': return num2 === 0 ? 'Division by zero' : num1 / num2;
+                default: return 'Invalid operator. Use +, -, *, /';
+            }
             
         default:
             return `Command not found: ${cmd}. Type 'help' for available commands`;
@@ -555,7 +693,7 @@ function createSettingsWindow() {
             document.getElementById('customAlert').style.display = 'none';
             if (confirmed) {
                 // reset to normal system settings from startup cause why not
-                document.body.style.backgroundImage = `url('h tps://pfst.cf2.poecdn.net/base/image/ad1e0434aa6bdc9fcba468cffc80ed994580ceada9ab9388b4e666d5edbaf6ec?w=1024&h=576&pmaid=289054046')`;
+                document.body.style.backgroundImage = `url('https://pfst.cf2.poecdn.net/base/image/ad1e0434aa6bdc9fcba468cffc80ed994580ceada9ab9388b4e666d5edbaf6ec?w=1024&h=576&pmaid=289054046')`;
                 document.getElementById('wallpaperUrl').value = '';
                 document.getElementById('wallpaperFile').value = '';
                 document.querySelector('input[name="clockFormat"][value="12"]').click();
@@ -576,7 +714,8 @@ function createSettingsWindow() {
             
             if (format === '12') {
                 const ampm = hours >= 12 ? 'PM' : 'AM';
-                hours = hours % 12 || 12;
+
+hours = hours % 12 || 12;
                 var timeString = `${hours}:${minutes}:${seconds} ${ampm}`;
             } else {
                 var timeString = `${hours.toString().padStart(2, '0')}:${minutes}:${seconds}`;
