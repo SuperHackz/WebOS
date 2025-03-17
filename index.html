@@ -46,8 +46,40 @@
             border-radius: 12px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             min-width: 300px;
-                z-index: 1001; 
+            z-index: 1001;
+            resize: both;
+            overflow: hidden;
+        }
 
+        .resize-handle {
+            position: absolute;
+            background: transparent;
+            padding: 5px;
+            z-index: 1002;
+        }
+
+        .resize-handle.e {
+            top: 0;
+            right: 0;
+            width: 5px;
+            height: 100%;
+            cursor: e-resize;
+        }
+
+        .resize-handle.s {
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            cursor: s-resize;
+        }
+
+        .resize-handle.se {
+            bottom: 0;
+            right: 0;
+            width: 10px;
+            height: 10px;
+            cursor: se-resize;
         }
 
         .title-bar {
@@ -306,8 +338,11 @@
 
     <script>
 let isDragging = false;
+let isResizing = false;
 let currentWindow;
 let offset = [0,0];
+let initialSize = [0,0];
+let resizeDirection = '';
 
 function startDrag(e) {
     if (e.target.classList.contains('close-btn')) return;
@@ -323,6 +358,40 @@ function startDrag(e) {
     document.addEventListener('mouseup', stopDrag);
 }
 
+function startResize(e, direction) {
+    e.stopPropagation();
+    isResizing = true;
+    resizeDirection = direction;
+    currentWindow = e.target.closest('.window');
+    initialSize = [currentWindow.offsetWidth, currentWindow.offsetHeight];
+    offset = [e.clientX, e.clientY];
+    document.body.style.userSelect = 'none';
+    
+    document.addEventListener('mousemove', resize);
+    document.addEventListener('mouseup', stopResize);
+}
+
+function resize(e) {
+    if (!isResizing) return;
+    
+    const dx = e.clientX - offset[0];
+    const dy = e.clientY - offset[1];
+    
+    if (resizeDirection.includes('e')) {
+        currentWindow.style.width = (initialSize[0] + dx) + 'px';
+    }
+    if (resizeDirection.includes('s')) {
+        currentWindow.style.height = (initialSize[1] + dy) + 'px';
+    }
+}
+
+function stopResize() {
+    isResizing = false;
+    document.body.style.userSelect = '';
+    document.removeEventListener('mousemove', resize);
+    document.removeEventListener('mouseup', stopResize);
+}
+
 function drag(e) {
     e.preventDefault();
     if (isDragging) {
@@ -334,9 +403,18 @@ function drag(e) {
 function stopDrag() {
     isDragging = false;
     document.body.style.userSelect = '';
-    
     document.removeEventListener('mousemove', drag);
     document.removeEventListener('mouseup', stopDrag);
+}
+
+function addResizeHandles(window) {
+    const handles = ['e', 's', 'se'];
+    handles.forEach(dir => {
+        const handle = document.createElement('div');
+        handle.className = `resize-handle ${dir}`;
+        handle.addEventListener('mousedown', (e) => startResize(e, dir));
+        window.appendChild(handle);
+    });
 }
 
 function launchApp(appName) {
@@ -363,6 +441,7 @@ function createBrowserWindow() {
     
     browserWindow.querySelector('.title-bar').addEventListener('mousedown', startDrag);
     document.body.appendChild(browserWindow);
+    addResizeHandles(browserWindow);
     return browserWindow;
 }
 
