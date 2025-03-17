@@ -1,4 +1,4 @@
-# WebOS
+# WebOS - The Cloud Based OS
 
 WebOS is a lightweight, open-source operating system designed for simplicity and usability. Built entirely using **HTML, CSS, and JavaScript**, it’s a single-file solution that’s incredibly efficient and easy to use. This project is currently in its early stages, and we’re excited to share it with the community for feedback and collaboration.
 
@@ -6,8 +6,7 @@ WebOS is a lightweight, open-source operating system designed for simplicity and
 
 ## 🚀 How to Download and Use
 
-1. **Download the latest release** from the [Releases page](https://github.com/SuperHackz/WebOS/releases).
-2. **Open the file** in your browser to start LunarixOS.
+Simply visit **[WebOS](web-os-jet.vercel.app)**
 
 ---
 
