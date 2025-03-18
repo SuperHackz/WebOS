@@ -11,6 +11,7 @@
             color: white;
             font-family: Arial, sans-serif;
             overflow: hidden;
+            --transition-speed: 0.3s;
         }
 
         .dock {
@@ -26,6 +27,7 @@
             gap: 25px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             z-index: 1000;
+            transition: transform 0.3s;
         }
 
         .app-icon {
@@ -49,6 +51,8 @@
             z-index: 1001;
             resize: both;
             overflow: hidden;
+            transition: opacity 0.3s;
+            opacity: 0.9;
         }
 
         .resize-handle {
@@ -116,7 +120,7 @@
             font-family: monospace;
             backdrop-filter: blur(4px);
         }
-        
+
     .browser-window {
         width: 800px;
         height: 600px;
@@ -160,7 +164,7 @@
         border: none;
         border-radius: 0 0 12px 12px;
     }
-    
+
     .terminal-window {
         width: 600px;
         height: 400px;
@@ -201,7 +205,7 @@
         content: " ";
         white-space: pre;
     }
-        
+
         .settings-window {
             width: 600px;
             height: 400px;
@@ -297,6 +301,18 @@
             background: #ff4444;
             color: white;
         }
+
+        .settings-tab {
+            display: none;
+        }
+
+        .settings-tab.active {
+            display: block;
+        }
+
+        .high-contrast {
+            filter: invert(1);
+        }
     </style>
 </head>
 <body>
@@ -353,7 +369,7 @@ function startDrag(e) {
         currentWindow.offsetTop - e.clientY
     ];
     document.body.style.userSelect = 'none';
-    
+
     document.addEventListener('mousemove', drag);
     document.addEventListener('mouseup', stopDrag);
 }
@@ -366,17 +382,17 @@ function startResize(e, direction) {
     initialSize = [currentWindow.offsetWidth, currentWindow.offsetHeight];
     offset = [e.clientX, e.clientY];
     document.body.style.userSelect = 'none';
-    
+
     document.addEventListener('mousemove', resize);
     document.addEventListener('mouseup', stopResize);
 }
 
 function resize(e) {
     if (!isResizing) return;
-    
+
     const dx = e.clientX - offset[0];
     const dy = e.clientY - offset[1];
-    
+
     if (resizeDirection.includes('e')) {
         currentWindow.style.width = (initialSize[0] + dx) + 'px';
     }
@@ -432,13 +448,16 @@ function createBrowserWindow() {
         <div class="address-bar">
             <input type="text" class="address-input" placeholder="Enter URL" id="urlInput">
             <button class="go-button" onclick="loadURL()">Go</button>
+            <button class="go-button" onclick="addBookmark()">🔖</button>
+        </div>
+        <div class="bookmarks-bar" style="padding: 5px; background: rgba(0,0,0,0.2); display: flex; gap: 10px; overflow-x: auto;">
         </div>
         <iframe class="browser-iframe" id="browserFrame" src="about:blank"></iframe>
     `;
-    
+
     browserWindow.style.left = `${window.innerWidth/2 - 400}px`;
     browserWindow.style.top = `${window.innerHeight/2 - 300}px`;
-    
+
     browserWindow.querySelector('.title-bar').addEventListener('mousedown', startDrag);
     document.body.appendChild(browserWindow);
     addResizeHandles(browserWindow);
@@ -468,19 +487,20 @@ function createFileManagerWindow() {
             <div class="close-btn" onclick="this.parentElement.parentElement.remove()"></div>
         </div>
         <div style="padding:20px;height:calc(100% - 60px);overflow:auto">
-            <div class="file-list" id="fileList">
-                <div class="file-item" onclick="alert('Documents folder')">📁 Documents</div>
-                <div class="file-item" onclick="alert('Downloads folder')">📁 Downloads</div>
-                <div class="file-item" onclick="alert('Pictures folder')">📁 Pictures</div>
-                <div class="file-item" onclick="alert('Music folder')">📁 Music</div>
-                <div class="file-item" onclick="alert('Videos folder')">📁 Videos</div>
+            <div class="file-list" id="fileList" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
+                <div class="file-item" draggable="true" ondragstart="handleDrag(event)" onclick="openFolder('Documents')">📁 Documents</div>
+                <div class="file-item" draggable="true" ondragstart="handleDrag(event)" onclick="openFolder('Downloads')">📁 Downloads</div>
+                <div class="file-item" draggable="true" ondragstart="handleDrag(event)" onclick="openFolder('Pictures')">📁 Pictures</div>
+                <div class="file-item" draggable="true" ondragstart="handleDrag(event)" onclick="openFolder('Music')">📁 Music</div>
+                <div class="file-item" draggable="true" ondragstart="handleDrag(event)" onclick="openFolder('Videos')">📁 Videos</div>
+                <div class="file-item" draggable="true" ondragstart="handleDrag(event)" onclick="openInNotepad('example.txt')">📄 example.txt</div>
             </div>
         </div>
     `;
-    
+
     fileWindow.style.left = `${window.innerWidth/2 - 300}px`;
     fileWindow.style.top = `${window.innerHeight/2 - 200}px`;
-    
+
     fileWindow.querySelector('.title-bar').addEventListener('mousedown', startDrag);
     document.body.appendChild(fileWindow);
     return fileWindow;
@@ -497,15 +517,29 @@ function createNotepadWindow() {
             <div class="close-btn" onclick="this.parentElement.parentElement.remove()"></div>
         </div>
         <div style="display: flex; padding: 5px; background: rgba(0,0,0,0.2);">
-            <input type="text" id="filename" placeholder="filename.txt" style="margin-right: 5px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 5px;">
+            <input type="text" id="filename" placeholder="filename.rtf" style="margin-right: 5px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 5px;">
             <button onclick="saveNotepadContent(this)" style="background: rgba(255,255,255,0.1); border: none; color: white; padding: 5px 10px; cursor: pointer;">Save</button>
+            <button onclick="downloadNotepadContent(this)" style="background: rgba(255,255,255,0.1); border: none; color: white; padding: 5px 10px; cursor: pointer; margin-left: 5px;">Download</button>
         </div>
-        <textarea class="notepad-content" style="width: 100%; height: calc(100% - 80px); background: transparent; color: white; border: none; padding: 10px; resize: none; outline: none;"></textarea>
+        <div style="display: flex; padding: 5px; background: rgba(0,0,0,0.2); gap: 5px;">
+            <select onchange="formatText(this.value)" style="background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 5px;">
+                <option value="normal">Normal</option>
+                <option value="bold">Bold</option>
+                <option value="italic">Italic</option>
+            </select>
+            <select onchange="setFontSize(this.value)" style="background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 5px;">
+                <option value="12px">12px</option>
+                <option value="14px">14px</option>
+                <option value="16px">16px</option>
+                <option value="18px">18px</option>
+            </select>
+        </div>
+        <div class="notepad-content" contenteditable="true" style="width: 100%; height: calc(100% - 80px); background: transparent; color: white; border: none; padding: 10px; resize: none; outline: none;"></div>
     `;
-    
+
     notepadWindow.style.left = `${window.innerWidth/2 - 300}px`;
     notepadWindow.style.top = `${window.innerHeight/2 - 200}px`;
-    
+
     notepadWindow.querySelector('.title-bar').addEventListener('mousedown', startDrag);
     document.body.appendChild(notepadWindow);
     return notepadWindow;
@@ -527,10 +561,10 @@ function createWindow(title) {
         </div>
         <div class="content" style="padding:20px;height:200px">Work In Progress! Check back soon!</div>
     `;
-    
+
     newWindow.style.left = `${Math.random() * window.innerWidth * 0.5}px`;
     newWindow.style.top = `${Math.random() * window.innerHeight * 0.5}px`;
-    
+
     newWindow.querySelector('.title-bar').addEventListener('mousedown', startDrag);
     document.body.appendChild(newWindow);
     return newWindow;
@@ -550,16 +584,16 @@ function createTerminalWindow() {
             <div class="terminal-input" contenteditable="true" id="termInput"></div>
         </div>
     `;
-    
+
     termWindow.style.left = `${window.innerWidth/2 - 300}px`;
     termWindow.style.top = `${window.innerHeight/2 - 200}px`;
-    
+
     termWindow.querySelector('.title-bar').addEventListener('mousedown', startDrag);
     document.body.appendChild(termWindow);
-    
+
     const termContent = termWindow.querySelector('#termContent');
     const termInput = termWindow.querySelector('#termInput');
-    
+
     const now = new Date();
     const options = { 
         weekday: 'short', 
@@ -571,33 +605,63 @@ function createTerminalWindow() {
     };
     const loginTime = now.toLocaleString('en-US', options).replace(',','');
     termContent.innerHTML = `Last login: ${loginTime} on terminal\n`;
-    
+
     let currentColor = '#ffffff';
-    
+
     termInput.addEventListener('keydown', (e) => {
         if(e.key === 'Enter') {
             e.preventDefault();
             const command = termInput.textContent.trim();
             termContent.innerHTML += `<span style="color:${currentColor}">${termInput.textContent}</span>\n`;
-            
+
             const output = processCommand(command);
             termContent.innerHTML += `<span style="color:${currentColor}">${output}</span>\n`;
-            
+
             termInput.textContent = '';
             termContent.scrollTop = termContent.scrollHeight;
         }
     });
-    
+
     termInput.focus();
-    
+
     return termWindow;
 }
 
-function saveNotepadContent(button) {
-    const textarea = button.closest('.window').querySelector('.notepad-content');
-    const filename = button.closest('.window').querySelector('#filename').value || 'note.txt';
-    const content = textarea.value;
-    const blob = new Blob([content], { type: 'text/plain' });
+function addBookmark() {
+    const url = document.getElementById('urlInput').value;
+    const name = prompt('Enter bookmark name:');
+    if (name && url) {
+        const bookmarkBar = document.querySelector('.bookmarks-bar');
+        const bookmark = document.createElement('a');
+        bookmark.href = '#';
+        bookmark.textContent = name;
+        bookmark.onclick = () => {
+            document.getElementById('urlInput').value = url;
+            loadURL();
+        };
+        bookmark.style.color = 'white';
+        bookmark.style.textDecoration = 'none';
+        bookmarkBar.appendChild(bookmark);
+    }
+}
+
+function convertToRTF(content) {
+    const styles = window.getComputedStyle(content);
+    let rtf = '{\\rtf1\\ansi\n';
+    rtf += '{\\fonttbl\\f0\\fswiss\\fcharset0 Arial;}\n';
+    rtf += '\\f0\\fs' + (parseInt(styles.fontSize) * 2) + ' ';
+    if (styles.fontWeight === 'bold') rtf += '\\b ';
+    if (styles.fontStyle === 'italic') rtf += '\\i ';
+    rtf += content.innerText.replace(/\n/g, '\\par\n');
+    rtf += '}';
+    return rtf;
+}
+
+function downloadNotepadContent(button) {
+    const content = button.closest('.window').querySelector('.notepad-content');
+    const filename = button.closest('.window').querySelector('#filename').value || 'note.rtf';
+    const rtfContent = convertToRTF(content);
+    const blob = new Blob([rtfContent], { type: 'application/rtf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -606,10 +670,103 @@ function saveNotepadContent(button) {
     URL.revokeObjectURL(url);
 }
 
+function saveNotepadContent(button) {
+    downloadNotepadContent(button);
+}
+
+function formatText(style) {
+    document.execCommand('styleWithCSS', false, true);
+    switch(style) {
+        case 'bold':
+            document.execCommand('bold', false, null);
+            break;
+        case 'italic':
+            document.execCommand('italic', false, null);
+            break;
+        default:
+            document.execCommand('removeFormat', false, null);
+    }
+}
+
+function setFontSize(size) {
+    document.execCommand('styleWithCSS', false, true);
+    document.execCommand('fontSize', false, size);
+}
+
+let currentPath = '/home/user';
+const fileSystem = {
+    '/home/user': {
+        'Documents': { type: 'folder', content: {} },
+        'Downloads': { type: 'folder', content: {} },
+        'Pictures': { type: 'folder', content: {} },
+        'Music': { type: 'folder', content: {} },
+        'Videos': { type: 'folder', content: {} },
+        'example.txt': { type: 'file', content: 'This is an example file.' }
+    }
+};
+
+function handleDrag(event) {
+    event.dataTransfer.setData('text/plain', event.target.textContent);
+}
+
+function handleDrop(event) {
+    event.preventDefault();
+    const data = event.dataTransfer.getData('text/plain');
+    const target = event.target.closest('.file-item');
+    if (target && target.textContent.includes('📁')) {
+        const fileName = data.replace('📄 ', '').replace('📁 ', '');
+        const folderName = target.textContent.replace('📁 ', '');
+        // Move file to new folder logic here
+        console.log(`Moved ${fileName} to ${folderName}`);
+    }
+}
+
+function openFolder(folderName) {
+    const fileList = document.getElementById('fileList');
+    fileList.innerHTML = '';
+    fileList.innerHTML += `<div class="file-item" onclick="navigateBack()">📁 ..</div>`;
+
+    const folder = fileSystem[currentPath][folderName];
+    if (folder && folder.type === 'folder') {
+        for (const item in folder.content) {
+            const isFolder = folder.content[item].type === 'folder';
+            fileList.innerHTML += `
+                <div class="file-item" draggable="true" ondragstart="handleDrag(event)" 
+                     onclick="${isFolder ? `openFolder('${item}')` : `openInNotepad('${item}')`}">
+                    ${isFolder ? '📁' : '📄'} ${item}
+                </div>`;
+        }
+    }
+}
+
+function navigateBack() {
+    const fileList = document.getElementById('fileList');
+    fileList.innerHTML = '';
+    for (const item in fileSystem['/home/user']) {
+        const isFolder = fileSystem['/home/user'][item].type === 'folder';
+        fileList.innerHTML += `
+            <div class="file-item" draggable="true" ondragstart="handleDrag(event)" 
+                 onclick="${isFolder ? `openFolder('${item}')` : `openInNotepad('${item}')`}">
+                ${isFolder ? '📁' : '📄'} ${item}
+            </div>`;
+    }
+}
+
+function openInNotepad(filename) {
+    const file = fileSystem[currentPath][filename];
+    if (file && file.type === 'file') {
+        const notepadWindow = createNotepadWindow();
+        const content = notepadWindow.querySelector('.notepad-content');
+        const filenameInput = notepadWindow.querySelector('#filename');
+        content.textContent = file.content;
+        filenameInput.value = filename;
+    }
+}
+
 function processCommand(command) {
     const args = command.split(' ');
     const cmd = args[0].toLowerCase();
-    
+
     switch(cmd) {
         case 'help':
             return `Available commands:
@@ -623,7 +780,7 @@ pwd       - Print working directory
 whoami    - Display current user
 calc      - Simple calculator (calc 2 + 2)
 Example: > color #ff0000 or > color red`;
-            
+
         case 'color':
             if(args.length < 2) return 'Usage: color [hex|name]';
             const color = args[1];
@@ -632,30 +789,44 @@ Example: > color #ff0000 or > color red`;
                 return `Text color changed to ${color}`;
             }
             return `Invalid color: ${color}`;
-            
+
         case 'clear':
             termContent.innerHTML = '';
             return '';
-            
+
         case 'echo':
             return args.slice(1).join(' ') || 'Usage: echo [message]';
-            
+
         case 'date':
             return new Date().toString();
-            
+
         case 'ls':
             return `Documents/
 Downloads/
 Pictures/
 Music/
 Videos/`;
-            
+
         case 'pwd':
-            return '/home/user';
-            
+            return currentPath;
+
+        case 'cd':
+            if (args.length < 2) return currentPath;
+            const newPath = args[1];
+            if (newPath === '..') {
+                currentPath = currentPath.split('/').slice(0, -1).join('/') || '/';
+                return currentPath;
+            }
+            const fullPath = currentPath + '/' + newPath;
+            if (fileSystem[fullPath] || fullPath === '/home/user') {
+                currentPath = fullPath;
+                return currentPath;
+            }
+            return 'Directory not found';
+
         case 'whoami':
             return 'user';
-            
+
         case 'calc':
             if (args.length !== 4) return 'Usage: calc [number] [operator] [number]';
             const [_, n1, op, n2] = args;
@@ -668,10 +839,10 @@ Videos/`;
                 case '/': return num2 === 0 ? 'Division by zero' : num1 / num2;
                 default: return 'Invalid operator. Use +, -, *, /';
             }
-            
+
         default:
             return `Command not found: ${cmd}. Type 'help' for available commands`;
-    }
+        }
 }
 
 function isValidColor(color) {
@@ -684,8 +855,7 @@ function isValidColor(color) {
 }
 
 function createSettingsWindow() {
-    const settingsWindow = document.createElement('div'); 
-    settingsWindow.className = 'window settings-window';
+    const settingsWindow = document.createElement('div'); settingsWindow.className = 'window settings-window';
     settingsWindow.innerHTML = `
         <div class="title-bar">
             <span>System Settings</span>
@@ -693,46 +863,115 @@ function createSettingsWindow() {
         </div>
         <div style="display: flex; height: calc(100% - 40px);">
             <div class="settings-sidebar">
-                <div class="settings-category active">Customize</div>
+                <div class="settings-category active" onclick="switchSettingsTab('appearance')">Appearance</div>
+                <div class="settings-category" onclick="switchSettingsTab('dock')">Dock</div>
+                <div class="settings-category" onclick="switchSettingsTab('system')">System</div>
+                <div class="settings-category" onclick="switchSettingsTab('accessibility')">Accessibility</div>
             </div>
             <div class="settings-content">
-<div class="settings-section">
-                    <h3>Wallpaper</h3>
-                    <input type="text" class="settings-input" id="wallpaperUrl" 
-                           placeholder="Image URL" oninput="updateWallpaper(this.value)">
-                    <input type="file" class="settings-input" id="wallpaperFile" 
-                           accept="image/*" onchange="handleFileUpload(this)" style="margin-top: 10px;">
-                </div>
-                
-                <div class="settings-section">
-                    <h3>Clock Format</h3>
-                    <label class="settings-label">
-                        <input type="radio" name="clockFormat" value="12" checked 
-                               onchange="updateClockFormat()"> 12 Hour
-                    </label>
-                    <label class="settings-label">
-                        <input type="radio" name="clockFormat" value="24" 
-                               onchange="updateClockFormat()"> 24 Hour
-                    </label>
-                    
-                    <div style="margin-top: 15px;">
+                <div class="settings-tab active" id="appearance-settings">
+                    <div class="settings-section">
+                        <h3>Theme</h3>
+                        <select class="settings-input" onchange="updateTheme(this.value)">
+                            <option value="dark">Dark</option>
+                            <option value="light">Light</option>
+                            <option value="blue">Blue</option>
+                        </select>
+                    </div>
+                    <div class="settings-section">
+                        <h3>Wallpaper</h3>
+                        <input type="text" class="settings-input" id="wallpaperUrl" 
+                               placeholder="Image URL" oninput="updateWallpaper(this.value)">
+                        <input type="file" class="settings-input" id="wallpaperFile" 
+                               accept="image/*" onchange="handleFileUpload(this)" style="margin-top: 10px;">
+                    </div>
+                    <div class="settings-section">
                         <label class="settings-label">
-                            <input type="checkbox" id="boldClock" onchange="updateClockStyle()"> Bold
+                            <input type="checkbox" id="enableBlur" onchange="toggleBlur(this.checked)"> Enable Blur
                         </label>
+                    </div>
+                    <div class="settings-section">
                         <label class="settings-label">
-                            <input type="checkbox" id="italicClock" onchange="updateClockStyle()"> Italic
+                            <input type="checkbox" id="enableTransparency" onchange="toggleTransparency(this.checked)"> Enable Transparency
                         </label>
-                        <input type="color" id="clockColor" onchange="updateClockStyle()" style="margin-top: 10px;">
                     </div>
                 </div>
-                
-                <button class="reset-button" onclick="showResetAlert()">Reset Settings</button>            </div>
+
+                <div class="settings-tab" id="dock-settings">
+                    <div class="settings-section">
+                        <h3>Dock Auto-Hide</h3>
+                        <label class="settings-label">
+                            <input type="checkbox" id="dockAutoHide" onchange="toggleDockAutoHide(this.checked)"> Auto-Hide Dock
+                        </label>
+                    </div>
+                    <div class="settings-section">
+                        <h3>Dock Size</h3>
+                        <input type="range" class="settings-input" min="30" max="80" value="50" 
+                               onchange="updateDockSize(this.value)">
+                    </div>
+                    <div class="settings-section">
+                        <h3>Dock Position</h3>
+                        <select class="settings-input" onchange="updateDockPosition(this.value)">
+                            <option value="bottom">Bottom</option>
+                            <option value="left">Left</option>
+                            <option value="right">Right</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-tab" id="system-settings">
+                    <div class="settings-section">
+                        <label class="settings-label">
+                            <input type="checkbox" id="enableAnimations" onchange="toggleAnimations(this.checked)"> Enable Animations
+                        </label>
+                    </div>
+                    <div class="settings-section">
+                        <label class="settings-label">
+                            <input type="checkbox" id="enableShadows" onchange="toggleShadows(this.checked)"> Enable Shadows
+                        </label>
+                    </div>
+                    <div class="settings-section">
+                        <h3>Text Size</h3>
+                        <input type="range" class="settings-input" min="12" max="24" value="16" 
+                               onchange="updateTextSize(this.value)">
+                    </div>
+                </div>
+
+                <div class="settings-tab" id="accessibility-settings">
+                    <div class="settings-section">
+                        <h3>Import/Export Settings</h3>
+                        <button onclick="exportSettings()" class="settings-input" style="margin-bottom: 10px; cursor: pointer;">Export Settings</button>
+                        <input type="file" accept=".csv" onchange="importSettings(this)" class="settings-input" style="margin-bottom: 20px;">
+                    </div>
+                    <div class="settings-section">
+                        <label class="settings-label">
+                            <input type="checkbox" id="highContrastMode" onchange="toggleHighContrast(this.checked)"> High Contrast Mode
+                        </label>
+                    </div>
+                    <div class="settings-section">
+                        <label class="settings-label">
+                            <input type="checkbox" id="screenReader" onchange="toggleScreenReader(this.checked)"> Screen Reader
+                        </label>
+                    </div>
+                    <div class="settings-section">
+                        <label class="settings-label">
+                            <input type="checkbox" id="systemSounds" onchange="toggleSystemSounds(this.checked)"> System Sounds
+                        </label>
+                    </div>
+                    <div class="settings-section">
+                        <h3>Volume</h3>
+                        <input type="range" class="settings-input" min="0" max="100" value="50" 
+                               onchange="updateVolume(this.value)">
+                    </div>
+                </div>
+                <button class="reset-button" onclick="showResetAlert()">Reset Settings</button>
+            </div>
         </div>
     `;
-    
+
     settingsWindow.style.left = `${window.innerWidth/2 - 300}px`;
     settingsWindow.style.top = `${window.innerHeight/2 - 200}px`;
-    
+
     settingsWindow.querySelector('.title-bar').addEventListener('mousedown', startDrag);
     document.body.appendChild(settingsWindow);
     return settingsWindow;
@@ -772,7 +1011,7 @@ function createSettingsWindow() {
             document.getElementById('customAlert').style.display = 'none';
             if (confirmed) {
                 // reset to normal system settings from startup cause why not
-                document.body.style.backgroundImage = `url('https://pfst.cf2.poecdn.net/base/image/ad1e0434aa6bdc9fcba468cffc80ed994580ceada9ab9388b4e666d5edbaf6ec?w=1024&h=576&pmaid=289054046')`;
+                document.body.style.backgroundImage = `url('https://pfst.cf2.poecdn.net/base/base/image/ad1e0434aa6bdc9fcba468cffc80ed994580ceada9ab9388b4e666d5edbaf6ec?w=1024&h=576&pmaid=289054046')`;
                 document.getElementById('wallpaperUrl').value = '';
                 document.getElementById('wallpaperFile').value = '';
                 document.querySelector('input[name="clockFormat"][value="12"]').click();
@@ -780,34 +1019,230 @@ function createSettingsWindow() {
                 document.getElementById('italicClock').checked = false;
                 document.getElementById('clockColor').value = '#ffffff';
                 updateClockStyle();
+                document.getElementById('enableBlur').checked = true;
+                document.getElementById('enableTransparency').checked = true;
+                document.getElementById('dockAutoHide').checked = false;
+                document.querySelector('input[type="range"][onchange="updateDockSize(this.value)"]').value = 50;
+                document.querySelector('select[onchange="updateDockPosition(this.value)"]').value = 'bottom';
+                document.getElementById('enableAnimations').checked = true;
+                document.getElementById('enableShadows').checked = true;
+                document.querySelector('input[type="range"][onchange="updateTextSize(this.value)"]').value = 16;
+                document.getElementById('highContrastMode').checked = false;
+                document.getElementById('screenReader').checked = false;
+                document.getElementById('systemSounds').checked = true;
+                document.querySelector('input[type="range"][onchange="updateVolume(this.value)"]').value = 50;
+                updateTheme('dark'); // Reset to default theme
             }
         }
 
         function updateClock() {
             const now = new Date();
             const format = localStorage.getItem('clockFormat') || '12';
-            
+
             let hours = now.getHours();
             const minutes = now.getMinutes().toString().padStart(2, '0');
             const seconds = now.getSeconds().toString().padStart(2, '0');
-            
+
             if (format === '12') {
                 const ampm = hours >= 12 ? 'PM' : 'AM';
-
-hours = hours % 12 || 12;
+                hours = hours % 12 || 12;
                 var timeString = `${hours}:${minutes}:${seconds} ${ampm}`;
             } else {
                 var timeString = `${hours.toString().padStart(2, '0')}:${minutes}:${seconds}`;
             }
-            
+
             const date = now.toLocaleDateString();
             document.getElementById('clock').textContent = `${date} ${timeString}`;
         }
 
-        
+        function exportSettings() {
+            const settings = {
+                wallpaper: document.body.style.backgroundImage,
+                clockFormat: localStorage.getItem('clockFormat') || '12',
+                theme: document.querySelector('select[onchange="updateTheme(this.value)"]').value,
+                blur: document.getElementById('enableBlur').checked,
+                transparency: document.getElementById('enableTransparency').checked,
+                dockAutoHide: document.getElementById('dockAutoHide').checked,
+                dockPosition: document.querySelector('select[onchange="updateDockPosition(this.value)"]').value,
+                animations: document.getElementById('enableAnimations').checked,
+                shadows: document.getElementById('enableShadows').checked,
+                textSize: document.querySelector('input[onchange="updateTextSize(this.value)"]').value,
+                highContrast: document.getElementById('highContrastMode').checked,
+                systemSounds: document.getElementById('systemSounds').checked,
+                volume: document.querySelector('input[onchange="updateVolume(this.value)"]').value
+            };
+
+            const csv = Object.entries(settings).map(([key, value]) => `${key},${value}`).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'webos-settings.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importSettings(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const csv = e.target.result;
+                    const settings = {};
+                    csv.split('\n').forEach(line => {
+                        const [key, value] = line.split(',');
+                        settings[key] = value;
+                    });
+
+                    // Apply settings
+                    document.body.style.backgroundImage = settings.wallpaper;
+                    localStorage.setItem('clockFormat', settings.clockFormat);
+                    document.querySelector('select[onchange="updateTheme(this.value)"]').value = settings.theme;
+                    document.getElementById('enableBlur').checked = settings.blur === 'true';
+                    document.getElementById('enableTransparency').checked = settings.transparency === 'true';
+                    document.getElementById('dockAutoHide').checked = settings.dockAutoHide === 'true';
+                    document.querySelector('select[onchange="updateDockPosition(this.value)"]').value = settings.dockPosition;
+                    document.getElementById('enableAnimations').checked = settings.animations === 'true';
+                    document.getElementById('enableShadows').checked = settings.shadows === 'true';
+                    document.querySelector('input[onchange="updateTextSize(this.value)"]').value = settings.textSize;
+                    document.getElementById('highContrastMode').checked = settings.highContrast === 'true';
+                    document.getElementById('systemSounds').checked = settings.systemSounds === 'true';
+                    document.querySelector('input[onchange="updateVolume(this.value)"]').value = settings.volume;
+                    
+                    // Apply the imported settings
+                    updateTheme(settings.theme);
+                    toggleBlur(settings.blur === 'true');
+                    toggleTransparency(settings.transparency === 'true');
+                    toggleDockAutoHide(settings.dockAutoHide === 'true');
+                    updateDockPosition(settings.dockPosition);
+                    toggleAnimations(settings.animations === 'true');
+                    toggleShadows(settings.shadows === 'true');
+                    updateTextSize(settings.textSize);
+                    toggleHighContrast(settings.highContrast === 'true');
+                    toggleSystemSounds(settings.systemSounds === 'true');
+                    updateVolume(settings.volume);
+                    updateClock();
+                };
+                reader.readAsText(file);
+            }
+        }
+
         setInterval(updateClock, 1000);
         updateClock();
-        
+
+        function switchSettingsTab(tabId) {
+            document.querySelectorAll('.settings-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.settings-category').forEach(cat => cat.classList.remove('active'));
+            document.getElementById(`${tabId}-settings`).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function updateTheme(theme) {
+            const root = document.documentElement;
+            switch(theme) {
+                case 'dark':
+                    root.style.setProperty('--bg-color', 'rgba(0, 0, 0, 0.8)');
+                    break;
+                case 'light':
+                    root.style.setProperty('--bg-color', 'rgba(255, 255, 255, 0.8)');
+                    break;
+                case 'blue':
+                    root.style.setProperty('--bg-color', 'rgba(0, 0, 255, 0.3)');
+                    break;
+                default:
+                    root.style.setProperty('--bg-color', 'rgba(0, 0, 0, 0.3)');
+            }
+        }
+
+        function toggleBlur(enabled) {
+            document.querySelectorAll('.window').forEach(window => {
+                window.style.backdropFilter = enabled ? 'blur(10px)' : 'none';
+            });
+        }
+
+        function toggleTransparency(enabled) {
+            document.querySelectorAll('.window').forEach(window => {
+                window.style.opacity = enabled ? '0.9' : '1';
+            });
+        }
+
+        function toggleDockAutoHide(enabled) {
+            const dock = document.querySelector('.dock');
+            dock.style.transition = 'transform 0.3s';
+            if(enabled) {
+                dock.addEventListener('mouseleave', () => dock.style.transform = 'translateY(100%)');
+                dock.addEventListener('mouseenter', () => dock.style.transform = 'translateY(0)');
+            } else {
+                dock.style.transform = 'translateY(0)';
+                dock.removeEventListener('mouseleave', () => {});
+                dock.removeEventListener('mouseenter', () => {});
+            }
+        }
+
+        function updateDockSize(size) {
+            document.querySelectorAll('.app-icon').forEach(icon => {
+                icon.style.width = `${size}px`;
+                icon.style.height = `${size}px`;
+            });
+        }
+
+        function updateDockPosition(position) {
+            const dock = document.querySelector('.dock');
+            dock.style.transform = 'translate(0, 0)';
+            switch(position) {
+                case 'left':
+                    dock.style.left = '20px';
+                    dock.style.bottom = '50%';
+                    dock.style.transform = 'translateY(50%)';
+                    dock.style.flexDirection = 'column';
+                    break;
+                case 'right':
+                    dock.style.right = '20px';
+                    dock.style.bottom = '50%';
+                    dock.style.transform = 'translateY(50%)';
+                    dock.style.flexDirection = 'column';
+                    break;
+                default:
+                    dock.style.left = '50%';
+                    dock.style.bottom = '20px';
+                    dock.style.transform = 'translateX(-50%)';
+                    dock.style.flexDirection = 'row';
+            }
+        }
+
+        function toggleAnimations(enabled) {
+            document.body.style.setProperty('--transition-speed', enabled ? '0.3s' : '0s');
+        }
+
+        function toggleShadows(enabled) {
+            document.querySelectorAll('.window').forEach(window => {
+                window.style.boxShadow = enabled ? '0 8px 32px rgba(0, 0, 0, 0.3)' : 'none';
+            });
+        }
+
+        function updateTextSize(size) {
+            document.body.style.fontSize = `${size}px`;
+        }
+
+        function toggleHighContrast(enabled) {
+            document.body.classList.toggle('high-contrast', enabled);
+        }
+
+        function toggleScreenReader(enabled) {
+            // Placeholder for screen reader functionality
+            console.log('Screen reader:', enabled);
+        }
+
+        function toggleSystemSounds(enabled) {
+            // Placeholder for system sounds
+            console.log('System sounds:', enabled);
+        }
+
+        function updateVolume(value) {
+            // Placeholder for volume control
+            console.log('Volume:', value);
+        }
+
     </script>
 </body>
 </html>
