@@ -340,6 +340,18 @@
          class="app-icon" 
          alt="Notepad" 
          onclick="launchApp('Notepad')">
+    <img src="https://cdn-icons-png.flaticon.com/512/2965/2965300.png" 
+         class="app-icon" 
+         alt="Calculator" 
+         onclick="launchApp('Calculator')">
+    <img src="https://cdn-icons-png.flaticon.com/512/2991/2991109.png" 
+         class="app-icon" 
+         alt="Paint" 
+         onclick="launchApp('Paint')">
+    <img src="https://cdn-icons-png.flaticon.com/512/2278/2278049.png" 
+         class="app-icon" 
+         alt="Calendar" 
+         onclick="launchApp('Calendar')">
 </div>
 
     <div class="custom-alert" id="customAlert">
@@ -446,14 +458,29 @@ function createBrowserWindow() {
             <div class="close-btn" onclick="this.parentElement.parentElement.remove()"></div>
         </div>
         <div class="address-bar">
-            <input type="text" class="address-input" placeholder="Enter URL" id="urlInput">
+            <button class="go-button" onclick="browserBack()">◀</button>
+            <button class="go-button" onclick="browserForward()">▶</button>
+            <button class="go-button" onclick="browserRefresh()">↻</button>
+            <input type="text" class="address-input" placeholder="Enter URL" id="urlInput" onkeypress="if(event.key==='Enter')loadURL()">
             <button class="go-button" onclick="loadURL()">Go</button>
             <button class="go-button" onclick="addBookmark()">🔖</button>
         </div>
         <div class="bookmarks-bar" style="padding: 5px; background: rgba(0,0,0,0.2); display: flex; gap: 10px; overflow-x: auto;">
         </div>
-        <iframe class="browser-iframe" id="browserFrame" src="about:blank"></iframe>
+        <iframe class="browser-iframe" id="browserFrame" src="about:blank" sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
     `;
+
+    // Prevent links from opening in new tabs
+    browserWindow.querySelector('#browserFrame').addEventListener('load', function() {
+        try {
+            const frame = this;
+            frame.contentWindow.document.querySelectorAll('a').forEach(link => {
+                link.target = '_self';
+            });
+        } catch(e) {
+            // Handle cross-origin restrictions silently
+        }
+    });
 
     browserWindow.style.left = `${window.innerWidth/2 - 400}px`;
     browserWindow.style.top = `${window.innerHeight/2 - 300}px`;
@@ -474,6 +501,262 @@ function loadURL() {
     }
     frame.src = url;
     input.value = url;
+}
+
+function browserBack() {
+    const frame = document.getElementById('browserFrame');
+    frame.contentWindow.history.back();
+}
+
+function browserForward() {
+    const frame = document.getElementById('browserFrame');
+    frame.contentWindow.history.forward();
+}
+
+function browserRefresh() {
+    const frame = document.getElementById('browserFrame');
+    frame.src = frame.src;
+}
+
+function createCalculatorWindow() {
+    const calcWindow = document.createElement('div');
+    calcWindow.className = 'window';
+    calcWindow.style.width = '300px';
+    calcWindow.innerHTML = `
+        <div class="title-bar">
+            <span>Calculator</span>
+            <div class="close-btn" onclick="this.parentElement.parentElement.remove()"></div>
+        </div>
+        <div style="padding:20px;background:rgba(0,0,0,0.2);border-radius:10px">
+            <input type="text" class="calc-display" readonly style="width:100%;margin-bottom:10px;padding:10px;font-size:20px;background:rgba(0,0,0,0.3);color:white;border:none;border-radius:5px">
+            <div class="calc-buttons" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+                <button onclick="calcInput('sqrt')" style="background:#444;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">√</button>
+                <button onclick="calcInput('(')" style="background:#444;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">(</button>
+                <button onclick="calcInput(')')" style="background:#444;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">)</button>
+                <button onclick="calcInput('/')" style="background:#ff9500;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">÷</button>
+                <button onclick="calcInput('7')" style="background:#666;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">7</button>
+                <button onclick="calcInput('8')" style="background:#666;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">8</button>
+                <button onclick="calcInput('9')" style="background:#666;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">9</button>
+                <button onclick="calcInput('*')" style="background:#ff9500;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">×</button>
+                <button onclick="calcInput('4')" style="background:#666;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">4</button>
+                <button onclick="calcInput('5')" style="background:#666;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">5</button>
+                <button onclick="calcInput('6')" style="background:#666;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">6</button>
+                <button onclick="calcInput('-')" style="background:#ff9500;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">−</button>
+                <button onclick="calcInput('1')" style="background:#666;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">1</button>
+                <button onclick="calcInput('2')" style="background:#666;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">2</button>
+                <button onclick="calcInput('3')" style="background:#666;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">3</button>
+                <button onclick="calcInput('+')" style="background:#ff9500;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">+</button>
+                <button onclick="calcInput('0')" style="background:#666;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer;grid-column:span 2">0</button>
+                <button onclick="calcInput('.')" style="background:#666;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">.</button>
+                <button onclick="calcEqual()" style="background:#ff9500;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer">=</button>
+                <button onclick="calcClear()" style="background:#444;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer;grid-column:span 4">Clear</button>
+            </div>
+        </div>
+    `;
+    
+    calcWindow.style.left = `${window.innerWidth/2 - 150}px`;
+    calcWindow.style.top = `${window.innerHeight/2 - 200}px`;
+    
+    calcWindow.querySelector('.title-bar').addEventListener('mousedown', startDrag);
+    document.body.appendChild(calcWindow);
+    return calcWindow;
+}
+
+function calcInput(val) {
+    const display = document.querySelector('.calc-display');
+    if(val === '=' || val === 'Enter') {
+        calcEqual();
+    } else if(val === 'sqrt') {
+        try {
+            const num = eval(display.value);
+            display.value = Math.sqrt(num);
+        } catch(e) {
+            display.value = 'Error';
+        }
+    } else {
+        display.value += val;
+    }
+}
+
+function calcClear() {
+    document.querySelector('.calc-display').value = '';
+}
+
+function calcEqual() {
+    const display = document.querySelector('.calc-display');
+    try {
+        display.value = eval(display.value);
+    } catch(e) {
+        display.value = 'Error';
+    }
+}
+
+function createPaintWindow() {
+    const paintWindow = document.createElement('div');
+    paintWindow.className = 'window';
+    paintWindow.style.width = '800px';
+    paintWindow.style.height = '600px';
+    paintWindow.innerHTML = `
+        <div class="title-bar">
+            <span>Paint</span>
+            <div class="close-btn" onclick="this.parentElement.parentElement.remove()"></div>
+        </div>
+        <div style="padding:15px;background:rgba(0,0,0,0.2)">
+            <div style="display:flex;gap:10px;margin-bottom:10px;background:rgba(0,0,0,0.3);padding:10px;border-radius:5px">
+                <input type="color" id="colorPicker" value="#ffffff" style="width:50px;height:30px">
+                <input type="range" id="brushSize" min="1" max="50" value="5" style="flex:1">
+                <button onclick="clearCanvas()" style="padding:5px 15px;background:#ff4444;color:white;border:none;border-radius:3px;cursor:pointer">Clear</button>
+                <button onclick="savePNG()" style="padding:5px 15px;background:#44ff44;color:white;border:none;border-radius:3px;cursor:pointer">Save PNG</button>
+                <select id="brushStyle" style="padding:5px;background:#333;color:white;border:none;border-radius:3px">
+                    <option value="round">Round</option>
+                    <option value="square">Square</option>
+                    <option value="line">Line</option>
+                </select>
+            </div>
+            <canvas id="paintCanvas" width="770" height="480" style="border:1px solid #fff;border-radius:5px;background:white"></canvas>
+        </div>
+    `;
+    
+    paintWindow.style.left = `${window.innerWidth/2 - 300}px`;
+    paintWindow.style.top = `${window.innerHeight/2 - 200}px`;
+    
+    paintWindow.querySelector('.title-bar').addEventListener('mousedown', startDrag);
+    document.body.appendChild(paintWindow);
+    
+    const canvas = paintWindow.querySelector('#paintCanvas');
+    const ctx = canvas.getContext('2d');
+    let painting = false;
+    
+    canvas.addEventListener('mousedown', startPosition);
+    canvas.addEventListener('mouseup', endPosition);
+    canvas.addEventListener('mousemove', draw);
+    
+    function startPosition(e) {
+        painting = true;
+        draw(e);
+    }
+    
+    function endPosition() {
+        painting = false;
+        ctx.beginPath();
+    }
+    
+    function draw(e) {
+        if(!painting) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        ctx.lineWidth = document.getElementById('brushSize').value;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = document.getElementById('colorPicker').value;
+        
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+    
+    return paintWindow;
+}
+
+function clearCanvas() {
+    const canvas = document.getElementById('paintCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function savePNG() {
+    const canvas = document.getElementById('paintCanvas');
+    const link = document.createElement('a');
+    link.download = 'paint.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+function createCalendarWindow() {
+    const calendarWindow = document.createElement('div');
+    calendarWindow.className = 'window';
+    calendarWindow.style.width = '300px';
+    calendarWindow.innerHTML = `
+        <div class="title-bar">
+            <span>Calendar</span>
+            <div class="close-btn" onclick="this.parentElement.parentElement.remove()"></div>
+        </div>
+        <div style="padding:20px">
+            <div id="calendar"></div>
+        </div>
+    `;
+    
+    calendarWindow.style.left = `${window.innerWidth/2 - 150}px`;
+    calendarWindow.style.top = `${window.innerHeight/2 - 200}px`;
+    
+    calendarWindow.querySelector('.title-bar').addEventListener('mousedown', startDrag);
+    document.body.appendChild(calendarWindow);
+    
+    renderCalendar(calendarWindow.querySelector('#calendar'));
+    return calendarWindow;
+}
+
+let currentDate = new Date();
+
+function renderCalendar(container) {
+    const month = currentDate.getMonth();
+    const year = currentDate.getFullYear();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    let html = `
+        <div style="text-align:center;margin-bottom:10px;background:rgba(0,0,0,0.2);padding:10px;border-radius:5px">
+            <button onclick="prevMonth()" style="padding:5px 15px;background:#444;color:white;border:none;border-radius:3px;cursor:pointer">&lt;</button>
+            <span style="margin:0 15px;font-size:18px">${monthNames[month]} ${year}</span>
+            <button onclick="nextMonth()" style="padding:5px 15px;background:#444;color:white;border:none;border-radius:3px;cursor:pointer">&gt;</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center">
+            <div style="padding:5px;background:rgba(0,0,0,0.3);border-radius:3px">Su</div>
+            <div style="padding:5px;background:rgba(0,0,0,0.3);border-radius:3px">Mo</div>
+            <div style="padding:5px;background:rgba(0,0,0,0.3);border-radius:3px">Tu</div>
+            <div style="padding:5px;background:rgba(0,0,0,0.3);border-radius:3px">We</div>
+            <div style="padding:5px;background:rgba(0,0,0,0.3);border-radius:3px">Th</div>
+            <div style="padding:5px;background:rgba(0,0,0,0.3);border-radius:3px">Fr</div>
+            <div style="padding:5px;background:rgba(0,0,0,0.3);border-radius:3px">Sa</div>
+    `;
+    
+    for(let i = 0; i < firstDay.getDay(); i++) {
+        html += '<div></div>';
+    }
+    
+    for(let day = 1; day <= lastDay.getDate(); day++) {
+        const isToday = day === new Date().getDate() && 
+                       month === new Date().getMonth() && 
+                       year === new Date().getFullYear();
+        html += `<div style="padding:5px;border-radius:3px;cursor:pointer;${
+            isToday ? 'background:rgba(255,255,255,0.3)' : 'background:rgba(0,0,0,0.2)'
+        }" onclick="selectDate(${day})">${day}</div>`;
+    }
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function prevMonth() {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar(document.getElementById('calendar'));
+}
+
+function nextMonth() {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderCalendar(document.getElementById('calendar'));
+}
+
+function selectDate(day) {
+    // Placeholder for date selection functionality
+    console.log(`Selected date: ${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${day}`);
 }
 
 function createFileManagerWindow() {
@@ -551,6 +834,9 @@ function createWindow(title) {
     if(title === 'Web Browser') return createBrowserWindow();
     if(title === 'File Manager') return createFileManagerWindow();
     if(title === 'Notepad') return createNotepadWindow();
+    if(title === 'Calculator') return createCalculatorWindow();
+    if(title === 'Paint') return createPaintWindow();
+    if(title === 'Calendar') return createCalendarWindow();
 
     const newWindow = document.createElement('div');
     newWindow.className = 'window';
